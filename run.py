@@ -19,16 +19,16 @@ def run_gridworld_counting_policy(account_for_human, goal_oriented, results_fold
     elif "corner" in test_case:
         #Randomly choose a corner
         corner = np.random.randint(0,grid_size-1)
-        if corner is 0:
+        if corner == 0:
             human_pos=[0,0]
             boxes_pos=[0,1,1,0]
-        elif corner is 1:
+        elif corner == 1:
             human_pos=[0,grid_size-1]
             boxes_pos=[0,grid_size-2,1,grid_size-1]
-        elif corner is 2:
+        elif corner == 2:
             human_pos=[grid_size-1,0]
             boxes_pos=[grid_size-2,0,grid_size-1,1]
-        elif corner is 3:
+        elif corner == 3:
             human_pos=[grid_size-1,grid_size-1]
             boxes_pos=[grid_size-2,grid_size-1,grid_size-1,grid_size-2]
         else:
@@ -56,7 +56,7 @@ def run_gridworld_counting_policy(account_for_human, goal_oriented, results_fold
     for step in range(num_steps):
         s, done = env.step_human(s)
         if step > 100:
-            import ipdb; ipdb.set_trace()
+            import ipdb; ipdb.set_trace( n
         if done:
             file = open(filename, "a")
             file.write("Reached Goal, took {} steps".format(step))
