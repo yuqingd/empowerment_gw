@@ -33,8 +33,11 @@ def run_gridworld_counting_policy(account_for_human, goal_oriented, test_case, g
     else:
         raise NotImplementedError
 
+    human_goal = np.random.randint(0,grid_size-1)
+
     # create env
-    env = GridWorldEnv(grid_size, seed=1, p=1.0, human_pos, boxes_pos)
+    env = GridWorldEnv(grid_size, seed=1, p=1.0, human_pos, boxes_pos, human_goal)
+
     policy = EmpowermentCountingPolicy(env, horizon=10, num_traj=1000, estimate_emp=True, account_for_human=account_for_human, goal_oriented=goal_oriented)
 
     s = env.reset()

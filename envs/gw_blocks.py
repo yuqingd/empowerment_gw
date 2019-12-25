@@ -17,7 +17,7 @@ class GridWorldEnv(discrete.DiscreteEnv):
         up = 3
         stay = 4
 
-    def __init__(self, seed, grid_size, p=1.0, human_pos=[2,2], boxes_pos=[2,3,3,2,1,2,2,1]):
+    def __init__(self, seed, grid_size, p, human_pos, boxes_pos, human_goal):
         """
         Gridworld environment with blocks.
 
@@ -27,7 +27,7 @@ class GridWorldEnv(discrete.DiscreteEnv):
         """
 
         self.num_boxes = int(len(boxes_pos)/2)
-        assert self.num_boxes > 0, "0 Boxes"
+        assert self.num_boxes > 0, "Cannot have 0 Boxes"
 
         self.actions = GridWorldEnv.Actions
         self.action_dim = 2 # one for action, one for box number
@@ -58,6 +58,8 @@ class GridWorldEnv(discrete.DiscreteEnv):
                     li.append((1.0, s_next, 0, False)) # prob, next_s, rew, done
                 else:
                     raise NotImplementedError
+
+        self.human_goal = human_goal
 
         super(GridWorldEnv, self).__init__(nS, nA, P, isd)
 
@@ -130,20 +132,42 @@ class GridWorldEnv(discrete.DiscreteEnv):
         action_vec.append(a // len(self.actions))
         return action_vec
 
-
     def set_state(self, s):
         self.s = s
 
     def step_human(self, s):
         state_vec = self.from_s(s)
-        row, col = state_vec[0], state_vec[1]
+        row, col = state_vec[0], state_vec[1] #current human position
 
-        b_rows = [state_vec[i] for i in range(2, self.state_dim - 1, 2)]
-        b_cols = [state_vec[i] for i in range(3, self.state_dim, 2)]
+        b_rows = [state_vec[i] for i in range(2, self.state_dim - 1, 2)] # boxes rows
+        b_cols = [state_vec[i] for i in range(3, self.state_dim, 2)] # boxes cols
 
-        col = self.inc_(col, row, b_cols, b_rows, 1) #step left
+        best_row = None
+        best_col = None
+        dist = np.inf
+        for ac in range(self.action_dim):
+            if ac == self.actions.left:
+                col = self.inc_(col, row, b_cols, b_rows, -1)
+            elif ac == self.actions.down:
+                row = self.inc_(row, col, b_rows, b_cols, 1)
+            elif ac == self.actions.right:
+                col = self.inc_(col, row, b_cols, b_rows, 1)
+            elif ac == self.actions.up:
+                row = self.inc_(row, col, b_rows, b_cols, -1)
+            elif ac == self.actions.stay:
+                pass
 
-        new_state = [row, col] + [*sum(zip(b_rows, b_cols), ())]
+            # find the action that brings you closest to your goal
+            cur_dist = np.linalg.norm(np.asarray([row, col]) - self.human_goal)
+
+            if cur_dist < dist:
+                dist = cur_dist
+                best_row = row
+                best_col = col
+
+       # col = self.inc_(col, row, b_cols, b_rows, 1) #step left
+
+        new_state = [best_row, best_col] + [*sum(zip(b_rows, b_cols), ())]
 
         return self.to_s(new_state)
 
