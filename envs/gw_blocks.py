@@ -138,15 +138,15 @@ class GridWorldEnv(discrete.DiscreteEnv):
 
     def step_human(self, s):
         state_vec = self.from_s(s)
-        row, col = state_vec[0], state_vec[1] #current human position
-
-        b_rows = [state_vec[i] for i in range(2, self.state_dim - 1, 2)] # boxes rows
-        b_cols = [state_vec[i] for i in range(3, self.state_dim, 2)] # boxes cols
 
         best_row = None
         best_col = None
         dist = np.inf
-        for ac in range(self.action_dim):
+        for ac in range(5):
+            row, col = state_vec[0], state_vec[1]  # current human position
+            b_rows = [state_vec[i] for i in range(2, self.state_dim - 1, 2)]  # boxes rows
+            b_cols = [state_vec[i] for i in range(3, self.state_dim, 2)]  # boxes cols
+
             if ac == self.actions.left:
                 col = self.inc_(col, row, b_cols, b_rows, -1)
             elif ac == self.actions.down:
@@ -166,8 +166,6 @@ class GridWorldEnv(discrete.DiscreteEnv):
                 best_row = row
                 best_col = col
 
-       # col = self.inc_(col, row, b_cols, b_rows, 1) #step left
-
         new_state = [best_row, best_col] + [*sum(zip(b_rows, b_cols), ())]
 
         done = np.array_equal([best_row, best_col], self.human_goal)
@@ -175,28 +173,38 @@ class GridWorldEnv(discrete.DiscreteEnv):
         return self.to_s(new_state), done
 
 
-    def render(self, mode='human'):
-        outfile = StringIO() if mode == 'ansi' else sys.stdout
+    def render(self,  filename=None, mode='human'):
+        if filename is None:
+            outfile = StringIO() if mode == 'ansi' else sys.stdout
+            colorize = True
+        else:
+            outfile = open(filename, "a")
+            colorize = False
 
         state_vec = self.from_s(self.s)
         row, col = state_vec[0], state_vec[1]
         b_rows = [state_vec[i] for i in range(2, self.state_dim - 1, 2)]
         b_cols = [state_vec[i] for i in range(3, self.state_dim, 2)]
+        goal_row, goal_col = self.human_goal[0], self.human_goal[1]
 
         desc = [["0" for _ in range(self.grid_size)] for _ in range(self.grid_size)]
         desc[row][col] = "1"
-        desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)
+        if colorize:
+            desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)
+        desc[goal_row][goal_col] = "3"
+        if colorize:
+            desc[goal_row][goal_col] = utils.colorize(desc[goal_row][goal_col], "green", highlight=True)
 
         for box_row, box_col in zip(b_rows, b_cols):
             desc[box_row][box_col] = "2"
-            desc[box_row][box_col] = utils.colorize(desc[box_row][box_col], "blue", highlight=True)
+            if colorize:
+                desc[box_row][box_col] = utils.colorize(desc[box_row][box_col], "blue", highlight=True)
 
         if self.lastaction is not None:
             outfile.write("  ({})\n".format(["Left","Down","Right","Up","Stay"][self.lastaction % len(self.actions)]))
         else:
             outfile.write("\n")
+
         outfile.write("\n".join(''.join(line) for line in desc)+"\n")
 
-        if mode != 'human':
-            with closing(outfile):
-                return outfile.getvalue()
+        outfile.close()

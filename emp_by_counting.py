@@ -28,17 +28,19 @@ class EmpowermentCountingPolicy:
         seen_states = set()
 
         if self.goal_oriented:
-            return np.log(len(self.compute_human_empowerment(s)) + 1)
+            human_seen_states = self.compute_human_empowerment(s)
+            seen_states.update(human_seen_states)
+            seen_states.add(-1)
+        else:
+            for a_seq in actions:
+                self.env.set_state(s)
 
-        for a_seq in actions:
-            self.env.set_state(s)
-
-            for a in a_seq:
-                s_next, _, _, _ = self.env.step(a)
-            seen_states.add(s_next)
-            if self.account_for_human:
-                human_seen_states = self.compute_human_empowerment(s_next)
-                seen_states.update(human_seen_states)
+                for a in a_seq:
+                    s_next, _, _, _ = self.env.step(a)
+                seen_states.add(s_next)
+                if self.account_for_human:
+                    human_seen_states = self.compute_human_empowerment(s_next)
+                    seen_states.update(human_seen_states)
 
         return np.log(len(seen_states))
 
@@ -68,15 +70,12 @@ class EmpowermentCountingPolicy:
 
                 new_h_s = [h_row, h_col] + [*sum(zip(other_rows, other_cols), ())]
                 new_h_s = self.env.to_s(new_h_s)
-                if new_h_s is not s:
+                if new_h_s != s:
                     seen_states.add(new_h_s)
 
         else:
-            h_col_new =  self.env.inc_(h_col, h_row, other_cols, other_rows, 1) #human move right
-            new_h_s = [h_row, h_col] + [*sum(zip(other_rows, other_cols), ())]
-            new_h_s = self.env.to_s(new_h_s)
-
-            if h_col_new is not h_col:
+            new_h_s, done = self.env.step_human(s)
+            if new_h_s != s:
                 seen_states.add(new_h_s)
 
         return seen_states
