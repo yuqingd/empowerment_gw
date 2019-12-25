@@ -8,8 +8,6 @@ from six import StringIO
 import sys
 from contextlib import closing
 
-
-
 class GridWorldEnv(discrete.DiscreteEnv):
 
     class Actions(IntEnum):
