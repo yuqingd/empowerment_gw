@@ -8,6 +8,7 @@ from six import StringIO
 import sys
 from contextlib import closing
 
+
 class GridWorldEnv(discrete.DiscreteEnv):
 
     class Actions(IntEnum):
@@ -157,7 +158,7 @@ class GridWorldEnv(discrete.DiscreteEnv):
             elif ac == self.actions.stay:
                 pass
 
-            # find the action that brings you closest to your goal
+            # find the action that brings the human closest to its goal
             cur_dist = np.linalg.norm(np.asarray([row, col]) - self.human_goal)
 
             if cur_dist < dist:
@@ -169,7 +170,10 @@ class GridWorldEnv(discrete.DiscreteEnv):
 
         new_state = [best_row, best_col] + [*sum(zip(b_rows, b_cols), ())]
 
-        return self.to_s(new_state)
+        done = np.array_equal([best_row, best_col], self.human_goal)
+
+        return self.to_s(new_state), done
+
 
     def render(self, mode='human'):
         outfile = StringIO() if mode == 'ansi' else sys.stdout

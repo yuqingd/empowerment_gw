@@ -45,8 +45,11 @@ def run_gridworld_counting_policy(account_for_human, goal_oriented, test_case, g
 
     env.render()
 
-    for _ in range(num_steps):
-        s = env.step_human(s)
+    for step in range(num_steps):
+        s, done = env.step_human(s)
+        if done:
+            print("Reached Goal, took {} steps".format(step))
+            break
         action = policy.next_action(s)
         env.set_state(s)
         next_s, _, _, _ = env.step(action)

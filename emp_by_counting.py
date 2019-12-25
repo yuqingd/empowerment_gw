@@ -27,6 +27,9 @@ class EmpowermentCountingPolicy:
 
         seen_states = set()
 
+        if self.goal_oriented:
+            return np.log(len(self.compute_human_empowerment(s)) + 1)
+
         for a_seq in actions:
             self.env.set_state(s)
 
@@ -36,7 +39,6 @@ class EmpowermentCountingPolicy:
             if self.account_for_human:
                 human_seen_states = self.compute_human_empowerment(s_next)
                 seen_states.update(human_seen_states)
-
 
         return np.log(len(seen_states))
 
@@ -85,10 +87,7 @@ class EmpowermentCountingPolicy:
         for a in range(self.act_dim):
             self.env.set_state(s)
             s_next, _, _, _ = self.env.step(a)
-            if not self.goal_oriented:
-                empowerment[a] = self.compute_n_step_empowerment(s_next)
-            else:
-                empowerment[a] = np.log(len(self.compute_human_empowerment(s_next))+1)
+            empowerment[a] = self.compute_n_step_empowerment(s_next)
 
         return np.argmax(empowerment)
 
