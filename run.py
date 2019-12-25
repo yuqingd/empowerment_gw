@@ -55,8 +55,6 @@ def run_gridworld_counting_policy(account_for_human, goal_oriented, results_fold
 
     for step in range(num_steps):
         s, done = env.step_human(s)
-        if step > 100:
-            import ipdb; ipdb.set_trace( n
         if done:
             file = open(filename, "a")
             file.write("Reached Goal, took {} steps".format(step))
