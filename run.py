@@ -52,6 +52,7 @@ def run_gridworld_counting_policy(account_for_human, goal_oriented, results_fold
     file.write("----------------- NEW EXPERIMENT ----------------")
     file.close()
     env.render(filename)
+    env.render()
 
     for step in range(num_steps):
         s, done = env.step_human(s)
@@ -64,6 +65,7 @@ def run_gridworld_counting_policy(account_for_human, goal_oriented, results_fold
         env.set_state(s)
         next_s, _, _, _ = env.step(action)
         env.render(filename)
+        env.render()
         s = next_s
 
 
