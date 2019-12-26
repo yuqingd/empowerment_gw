@@ -207,4 +207,5 @@ class GridWorldEnv(discrete.DiscreteEnv):
 
         outfile.write("\n".join(''.join(line) for line in desc)+"\n")
 
-        outfile.close()
+        if filename is not None:
+            outfile.close()
