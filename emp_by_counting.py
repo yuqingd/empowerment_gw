@@ -3,7 +3,7 @@ import numpy as np
 
 class EmpowermentCountingPolicy:
 
-    def __init__(self, env, horizon=10, num_traj=1000, estimate_emp=False, account_for_human=False, goal_oriented=False):
+    def __init__(self, env, horizon=10, num_traj=100, estimate_emp=False, account_for_human=False, goal_oriented=False):
 
         self.env = env
         self.act_dim = env.action_space.n
