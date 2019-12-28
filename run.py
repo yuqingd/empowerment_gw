@@ -132,7 +132,6 @@ if __name__ == '__main__':
         num_steps = run_gridworld_counting_policy(account_for_human, goal_oriented, test_all, results_folder, i, test_case, grid_size)
         steps.append(num_steps)
 
-    import ipdb; ipdb.set_trace()
     filename =  results_folder + "/summary.txt"
     file = open(filename, "w")
     file.write("----------------- SUMMARY ---------------- \n")
