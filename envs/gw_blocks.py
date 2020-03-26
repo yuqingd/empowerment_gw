@@ -85,7 +85,7 @@ class GridWorldEnv(discrete.DiscreteEnv):
                 b_row = b_rows[box]
 
                 other_cols = np.copy(b_cols)
-                other_cols[box] = col
+                other_cols[box] = col #replace with human pos
                 other_rows = np.copy(b_rows)
                 other_rows[box] = row
 
@@ -136,12 +136,16 @@ class GridWorldEnv(discrete.DiscreteEnv):
     def set_state(self, s):
         self.s = s
 
-    def step_human(self, s):
+    def step_human(self, s, human_goal=None):
+        if human_goal == None:
+            human_goal = self.human_goal
+
         state_vec = self.from_s(s)
 
         best_row = None
         best_col = None
         dist = np.inf
+        best_ac = None
         for ac in range(5):
             row, col = state_vec[0], state_vec[1]  # current human position
             b_rows = [state_vec[i] for i in range(2, self.state_dim - 1, 2)]  # boxes rows
@@ -159,19 +163,100 @@ class GridWorldEnv(discrete.DiscreteEnv):
                 pass
 
             # find the action that brings the human closest to its goal
-            cur_dist = np.linalg.norm(np.asarray([row, col]) - self.human_goal)
+            cur_dist = np.linalg.norm(np.asarray([row, col]) - human_goal)
+
+            if cur_dist < dist:
+                dist = cur_dist
+                best_row = row
+                best_col = col
+                best_ac = ac
+
+        new_state = [best_row, best_col] + [*sum(zip(b_rows, b_cols), ())]
+
+        done = np.array_equal([best_row, best_col], human_goal)
+
+        return self.to_s(new_state), done, best_ac
+
+    def human_dist_to_goal(self, s, goal_states):
+        # return distance to each goal in goal_states
+        state_vec = self.from_s(s)
+        row, col = state_vec[0], state_vec[1]  # current human position
+        dist_to_goal = {}
+        for goal in goal_states:
+            dist_to_goal[goal] = np.linalg.norm(np.asarray([row, col]) - np.asarray(goal))
+
+        return dist_to_goal
+
+    def infer_a(self, s, human_goal):
+        #compute action to help human move towards their goal
+        state_vec = self.from_s(s)
+        row, col = state_vec[0], state_vec[1]  # current human position
+        b_rows = [state_vec[i] for i in range(2, self.state_dim - 1, 2)]  # boxes rows
+        b_cols = [state_vec[i] for i in range(3, self.state_dim, 2)]  # boxes cols
+
+        dist = np.inf
+
+        for human_ac in range(5):
+            if human_ac == self.actions.left:
+                col = max(col - 1, 0)
+            elif human_ac == self.actions.down:
+                row = min(row + 1, self.grid_size-1)
+            elif human_ac == self.actions.right:
+                col = min(col + 1, self.grid_size-1)
+            elif human_ac == self.actions.up:
+                row = max(row - 1, 0)
+            elif human_ac == self.actions.stay:
+                pass
+
+            # find the action that brings the human closest to its goal
+            cur_dist = np.linalg.norm(np.asarray([row, col]) - human_goal)
 
             if cur_dist < dist:
                 dist = cur_dist
                 best_row = row
                 best_col = col
 
-        new_state = [best_row, best_col] + [*sum(zip(b_rows, b_cols), ())]
+        action = []
 
-        done = np.array_equal([best_row, best_col], self.human_goal)
+        #find box we interfere with
+        for i, (b_row, b_col) in enumerate(zip(b_rows, b_cols)):
+            if best_row == b_row and best_col == b_col:
+                box = i
+                action.append(box) #first index of action is the box we're moving
 
-        return self.to_s(new_state), done
+                other_cols = np.copy(b_cols)
+                other_cols[box] = best_row
+                other_rows = np.copy(b_rows)
+                other_rows[box] = best_col
 
+                for box_a in self.actions:
+                    if box_a == self.actions.left:
+                        b_col_new = self.inc_(b_col, b_row, other_cols, other_rows, -1)
+                        if b_col_new != b_col: #can move this block
+                            action.append(box_a)
+                            break
+                    elif box_a == self.actions.down:
+                        b_row_new = self.inc_(b_row, b_col, other_rows, other_cols, 1)
+                        if b_row_new != b_row:
+                            action.append(box_a)
+                            break
+                    elif box_a == self.actions.right:
+                        b_col_new = self.inc_(b_col, b_row, other_cols, other_rows, 1)
+                        if b_col_new != b_col: #can move this block
+                            action.append(box_a)
+                            break
+
+                    elif box_a == self.actions.up:
+                        b_row_new = self.inc_(b_row, b_col, other_rows, other_cols, -1)
+                        if b_row_new != b_row:
+                            action.append(box_a)
+                            break
+
+                    elif box_a == self.actions.stay:
+                        pass
+        if len(action) == 0:
+            return 4
+        return self.to_a(action)
 
     def render(self,  filename=None, mode='human'):
         if filename is None:
