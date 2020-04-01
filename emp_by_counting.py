@@ -19,6 +19,7 @@ class EmpowermentCountingPolicy:
         :param s:
         :return:
         """
+
         if self.estimate_emp: #randomly sample from possible action trajectories
             actions = np.random.choice(self.act_dim, size=(self.num_traj, self.horizon))
         else:
@@ -74,7 +75,7 @@ class EmpowermentCountingPolicy:
                     seen_states.add(new_h_s)
 
         else:
-            new_h_s, done = self.env.step_human(s)
+            new_h_s, done, _ = self.env.step_human(s)
             if new_h_s != s:
                 seen_states.add(new_h_s)
 

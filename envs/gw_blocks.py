@@ -33,6 +33,7 @@ class GridWorldEnv(discrete.DiscreteEnv):
         self.actions = GridWorldEnv.Actions
         self.action_dim = 2 # one for action, one for box number
         nA = len(self.actions) * self.num_boxes
+        self.nA = nA
 
         self.state_dim = 2 + self.num_boxes*2  #my coordinates, goal coordinates, and coordinates of boxes
         nS = grid_size ** self.state_dim
@@ -190,13 +191,16 @@ class GridWorldEnv(discrete.DiscreteEnv):
     def infer_a(self, s, human_goal):
         #compute action to help human move towards their goal
         state_vec = self.from_s(s)
-        row, col = state_vec[0], state_vec[1]  # current human position
+        h_row, h_col = state_vec[0], state_vec[1]  # current human position
         b_rows = [state_vec[i] for i in range(2, self.state_dim - 1, 2)]  # boxes rows
         b_cols = [state_vec[i] for i in range(3, self.state_dim, 2)]  # boxes cols
 
         dist = np.inf
 
         for human_ac in range(5):
+            row = h_row
+            col = h_col
+
             if human_ac == self.actions.left:
                 col = max(col - 1, 0)
             elif human_ac == self.actions.down:
@@ -221,35 +225,38 @@ class GridWorldEnv(discrete.DiscreteEnv):
         #find box we interfere with
         for i, (b_row, b_col) in enumerate(zip(b_rows, b_cols)):
             if best_row == b_row and best_col == b_col:
-                box = i
-                action.append(box) #first index of action is the box we're moving
+                box = i #first index of action is the box we're moving
 
                 other_cols = np.copy(b_cols)
-                other_cols[box] = best_row
+                other_cols[box] = h_col
                 other_rows = np.copy(b_rows)
-                other_rows[box] = best_col
+                other_rows[box] = h_row
 
                 for box_a in self.actions:
                     if box_a == self.actions.left:
                         b_col_new = self.inc_(b_col, b_row, other_cols, other_rows, -1)
                         if b_col_new != b_col: #can move this block
                             action.append(box_a)
+                            action.append(box)
                             break
                     elif box_a == self.actions.down:
                         b_row_new = self.inc_(b_row, b_col, other_rows, other_cols, 1)
                         if b_row_new != b_row:
                             action.append(box_a)
+                            action.append(box)
                             break
                     elif box_a == self.actions.right:
                         b_col_new = self.inc_(b_col, b_row, other_cols, other_rows, 1)
                         if b_col_new != b_col: #can move this block
                             action.append(box_a)
+                            action.append(box)
                             break
 
                     elif box_a == self.actions.up:
                         b_row_new = self.inc_(b_row, b_col, other_rows, other_cols, -1)
                         if b_row_new != b_row:
                             action.append(box_a)
+                            action.append(box)
                             break
 
                     elif box_a == self.actions.stay:
