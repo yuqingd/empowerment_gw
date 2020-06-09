@@ -3,7 +3,7 @@ import numpy as np
 
 class GoalInferencePolicy:
 
-    def __init__(self, env, goal_set, alpha=1, plan_expectation=True):
+    def __init__(self, env, goal_set, alpha=0.5, plan_expectation=True):
         self.env = env
         self.alpha = alpha
         self.goal_set = goal_set #set of potential human goals
@@ -33,6 +33,9 @@ class GoalInferencePolicy:
                     self.goal_probs[goal] -= prob_adj
             elif delta < 0:
                 self.goal_probs[goal] += prob_adj
+            else:
+                if cur_dist_to_goal[goal] == 0:
+                    self.goal_probs[goal] = 0
         # normalize probs
         total_prob = np.sum(list(self.goal_probs.values()))
         self.goal_probs = {k : v / total_prob for k,v in self.goal_probs.items()}
@@ -48,7 +51,10 @@ class GoalInferencePolicy:
                 best_action = self.env.infer_a(s, goal)
                 actions[best_action] += self.goal_probs[goal]
 
-            action = max(actions, key=actions.get)
+            mx = max(actions.values())
+            actions = [k for k, v in actions.items() if v == mx]
+            action_idx = np.random.choice(len(actions), 1)[0]
+            action = actions[action_idx]
 
         else:
             # from probs, sample which goal we think human is going to
