@@ -9,3 +9,5 @@ For experiments in the paper, run
 
 `python run.py --test_all --goal_inference --block_goal --num_trials 100` and specify `--test_case` for the different 
 scenarios (e.g. corner, center).
+
+For recorded data, see data folder.
